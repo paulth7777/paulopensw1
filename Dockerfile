@@ -23,7 +23,7 @@ RUN pip install --no-cache-dir -r requirements.txt
 
 # [최적화 핵심] Docker Build 과정에서 AI 모델을 미리 다운로드!
 # 서버가 켜질 때마다 1GB가 넘는 모델을 새로 다운로드하는 것을 방지합니다.
-RUN python -c "from transformers import pipeline; pipeline('summarization', model='sshleifer/distilbart-cnn-12-6')"
+#RUN python -c "from transformers import pipeline; pipeline('summarization', model='sshleifer/distilbart-cnn-12-6')"
 
 # 보안을 위해 컨테이너 내부에서 root가 아닌 생성된 유저 사용
 RUN useradd -m appuser
