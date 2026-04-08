@@ -7,13 +7,9 @@ on:
     branches: [ "main", "master" ]
 
 env:
-  # 내 이미지 이름
   IMAGE_NAME: news-summarizer-api
 
 jobs:
-  # ==========================================
-  # [1단계 CI] 클라우드(우분투)에서 도커 빌드 & 허브 푸시
-  # ==========================================
   build-and-push:
     runs-on: ubuntu-latest
     
@@ -49,34 +45,19 @@ jobs:
         cache-from: type=gha
         cache-to: type=gha,mode=max
 
-  # ==========================================
-  # [2단계 CD] 내 윈도우 컴퓨터(Self-hosted)에서 자동 배포 및 실행!
-  # ==========================================
   deploy:
-    # 빌드(build-and-push)가 완벽하게 성공했을 때만 실행되도록 묶어줍니다.
     needs: build-and-push
-    
-    # 💥 핵심 가이드라인: 방금 등록하신 내 컴퓨터 로봇을 사용하겠다고 선언합니다.
     runs-on: self-hosted
-    
-    # 코드가 병합(Push)되었을 때만 실행합니다 (PR 단순 확인용일 때는 배포 제외)
     if: github.event_name != 'pull_request'
     
     steps:
-    - name: Pull and Run on Windows Local Runner
-      # 윈도우 파워쉘 기반 명령어입니다.
+    - name: Deploy to Local Windows Server
+      shell: powershell
       run: |
-        # 1. 깃허브 액션 콘솔에 남길 멋진 안내 메시지
-        echo "🚀 내 컴퓨터 배포 로봇 출동! 최신 도커 이미지 다운로드를 시작합니다."
-        
-        # 2. Docker Hub에서 방금 올라간 따끈따끈한 latest 이미지를 당겨옵니다.
+        echo "Run # 1. 방금 Docker Hub에 Push된 최신 이미지를 가져옵니다."
         docker pull ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
         
-        # 3. 기존에 돌아가고 있는 낡은 서버 찌꺼기가 있다면 강제로 부셔줍니다!(삭제)
-        # (혹시 처음이라 삭제할 컨테이너가 없어서 에러가 나더라도 무시하고 넘어가도록 처리합니다.)
-        docker rm -f news-api-server 2>$null || $true
+        # 윈도우용 파워쉘 전용 에러 무시 문법
+        try { docker rm -f news-api-server } catch {}
         
-        # 4. 방금 다운받은 최신 이미지를 포트 8000에 묶어서 백그라운드(-d)로 은밀하고 강력하게 실행시킵니다.
         docker run -d --name news-api-server -p 8000:8000 ${{ secrets.DOCKERHUB_USERNAME }}/${{ env.IMAGE_NAME }}:latest
-        
-        echo "✅ 로컬 컴퓨터 배포 및 실행 완벽하게 성공!! (http://127.0.0.1:8000/docs 에 접속해 보세요)"
